@@ -1,0 +1,3 @@
+
+#define ETHER_MAXLEN 1500
+#define ETHER_ALEN LINK_MAC_ALEN
