@@ -3,10 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ether.h"
+#include "ip.h"
 #include "logger.h"
 #include "netdevice.h"
-#include "ip.h"
-#include "ether.h"
 
 static pthread_t ingress_tid, egress_tid, sockd_tid, rx_read_tid;
 static int netdevice_handle;
@@ -22,7 +21,8 @@ void *bstack_rx_read(void *arg)
     struct ether_hdr hdr;
     while (1) {
         int retval;
-        if ((retval = netdevice_rx_read(netdevice_handle, &hdr, rx_buffer)) == -1) {
+        if ((retval = netdevice_rx_read(netdevice_handle, &hdr, rx_buffer)) ==
+            -1) {
             continue;
         } else {
             retval = ether_input(rx_buffer, &hdr, retval);

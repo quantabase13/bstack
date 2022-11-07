@@ -43,4 +43,3 @@ uint32_t ether_fcs(uint8_t *data, size_t len)
 
     return crc;
 }
-

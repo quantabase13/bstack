@@ -1,8 +1,8 @@
-#include <string.h>
+#include "arp.h"
 #include <errno.h>
+#include <string.h>
 #include "ether.h"
 #include "ip.h"
-#include "arp.h"
 #include "logger.h"
 #include "netdevice.h"
 #include "tree.h"
@@ -137,29 +137,29 @@ int arp_cache_get_haddr(in_addr_t iface, in_addr_t ip_addr, mac_addr_t haddr)
 
 int arp_input(uint8_t *payload, struct ether_hdr *hdr, size_t len)
 {
-    struct arp_ip *arp_net = (struct arp_ip *)payload;
+    struct arp_ip *arp_net = (struct arp_ip *) payload;
     struct arp_ip arp;
     struct ip_route route;
     arp_ntoh(arp_net, &arp);
     arp_cache_insert(arp.arp_spa, arp.arp_sha, ARP_CACHE_DYN);
 
-    switch(arp.arp_oper){
-        case ARP_OPER_REQUEST:
-        if (!ip_route_find_by_iface(arp.arp_tpa, &route)){
+    switch (arp.arp_oper) {
+    case ARP_OPER_REQUEST:
+        if (!ip_route_find_by_iface(arp.arp_tpa, &route)) {
             arp_net->arp_oper = htons(ARP_OPER_REPLY);
             arp_net->arp_tpa = arp_net->arp_spa;
-            arp_net->arp_spa = htonl(route.r_iface); 
+            arp_net->arp_spa = htonl(route.r_iface);
             memcpy(arp_net->arp_tha, arp_net->arp_sha, sizeof(mac_addr_t));
             netdevice_handle2addr(route.r_iface_handle, arp_net->arp_sha);
-            netdevice_send(route.r_iface_handle, hdr->h_src, ETHER_P_ARP, payload, len);
-            break;       
+            netdevice_send(route.r_iface_handle, hdr->h_src, ETHER_P_ARP,
+                           payload, len);
+            break;
         }
-        case ARP_OPER_REPLY:
-            break;
-        default:
-            LOG(LOG_WARN, "Invalid ARP op: %d", arp.arp_oper);
-            break;
-
+    case ARP_OPER_REPLY:
+        break;
+    default:
+        LOG(LOG_WARN, "Invalid ARP op: %d", arp.arp_oper);
+        break;
     }
     return 0;
 }
@@ -182,7 +182,7 @@ static int arp_request(int ether_handle, in_addr_t spa, in_addr_t tpa)
 
     arp_hton(&msg, &msg);
     retval = netdevice_send(ether_handle, mac_broadcast_addr, ETHER_P_ARP,
-                        (uint8_t *) (&msg), sizeof(msg));
+                            (uint8_t *) (&msg), sizeof(msg));
 
     return (retval < 0) ? retval : 0;
 }

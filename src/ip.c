@@ -1,11 +1,12 @@
-#include "ether.h"
-#include "arp.h"
-#include "netdevice.h"
 #include "ip.h"
 #include <stdio.h>
+#include "arp.h"
+#include "ether.h"
+#include "netdevice.h"
 
 
-int ip_input(uint8_t *payload, struct ether_hdr *hdr, size_t len){
+int ip_input(uint8_t *payload, struct ether_hdr *hdr, size_t len)
+{
     printf("ip recv\n");
     return 0;
 }

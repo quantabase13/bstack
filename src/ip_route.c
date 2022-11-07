@@ -2,9 +2,9 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include "ip.h"
-#include "collection.h"
 #include "bstack_util.h"
+#include "collection.h"
+#include "ip.h"
 #include "tree.h"
 
 
@@ -175,7 +175,7 @@ int ip_route_find_by_iface(in_addr_t addr, struct ip_route *route)
         errno = ENOENT;
         return -1;
     }
-    
+
     if (route)
         memcpy(route, &entry->route, sizeof(struct ip_route));
 

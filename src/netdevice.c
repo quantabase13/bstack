@@ -12,8 +12,8 @@
 #include <unistd.h>
 #include "bstack_link.h"
 #include "logger.h"
-#include "queue_r.h"
 #include "mbuf.h"
+#include "queue_r.h"
 
 #define MAX_IF 1
 
@@ -126,16 +126,21 @@ int netdevice_receive(int handle, uint8_t buffer[], size_t len)
     return 1;
 }
 
-int netdevice_send(int handle, mac_addr_t dst ,uint16_t proto, uint8_t buffer[], size_t len)
+int netdevice_send(int handle,
+                   mac_addr_t dst,
+                   uint16_t proto,
+                   uint8_t buffer[],
+                   size_t len)
 {
     struct ether_linux *eth;
     struct sockaddr_ll sock_address = {0};
-    size_t frame_size = ETHER_HEADER_LEN + max(len, ETHER_MINLEN-ETHER_FCS_LEN) + ETHER_FCS_LEN;
+    size_t frame_size = ETHER_HEADER_LEN +
+                        max(len, ETHER_MINLEN - ETHER_FCS_LEN) + ETHER_FCS_LEN;
     uint8_t frame[frame_size] __attribute__((aligned));
     uint32_t fcs;
-    struct ether_hdr *frame_hdr = (struct ether_hdr *)frame;
+    struct ether_hdr *frame_hdr = (struct ether_hdr *) frame;
     uint8_t *data = frame + ETHER_HEADER_LEN;
-    uint32_t *fcs_p = (uint32_t *)(frame + frame_size - ETHER_FCS_LEN);
+    uint32_t *fcs_p = (uint32_t *) (frame + frame_size - ETHER_FCS_LEN);
     int retval;
 
     eth = &ether_if[handle];
@@ -143,7 +148,7 @@ int netdevice_send(int handle, mac_addr_t dst ,uint16_t proto, uint8_t buffer[],
     sock_address.sll_protocol = htons(proto);
     sock_address.sll_ifindex = eth->el_if_idx.ifr_ifindex;
     sock_address.sll_halen = ETHER_ALEN;
-    for (int i = 0; i < ETHER_ALEN; i++){
+    for (int i = 0; i < ETHER_ALEN; i++) {
         sock_address.sll_addr[i] = dst[i];
     }
     memcpy(frame_hdr->h_dst, dst, ETHER_ALEN);
@@ -153,8 +158,10 @@ int netdevice_send(int handle, mac_addr_t dst ,uint16_t proto, uint8_t buffer[],
     memset(data + len, 0, frame_size - ETHER_HEADER_LEN - len);
     fcs = ether_fcs(frame, frame_size - ETHER_FCS_LEN);
     memcpy(fcs_p, &fcs, sizeof(uint32_t));
-    retval = (int) sendto(eth->el_fd, frame, sizeof(frame), 0, (struct sockaddr *)(&sock_address), sizeof(sock_address));
-    if (retval < 0){
+    retval =
+        (int) sendto(eth->el_fd, frame, sizeof(frame), 0,
+                     (struct sockaddr *) (&sock_address), sizeof(sock_address));
+    if (retval < 0) {
         LOG(LOG_ERR, "send failed: %d", errno);
     }
     return 0;
@@ -170,12 +177,12 @@ int netdevice_rx_read(int handle, struct ether_hdr *hdr, uint8_t *buffer)
         while (!queue_peek(eth->ingress_q, &frame_index)) {
             ;
         }
-        struct mbuf *buf = (struct mbuf *)(eth->ingress_data + frame_index);
-        frame_hdr = (struct ether_hdr *)(buf->data);
+        struct mbuf *buf = (struct mbuf *) (eth->ingress_data + frame_index);
+        frame_hdr = (struct ether_hdr *) (buf->data);
         memcpy(buffer, buf->data + ETHER_HEADER_LEN, buf->len);
         // frame_hdr = (struct ether_hdr *)(eth->ingress_data + frame_index);
-        memcpy (hdr->h_dst, frame_hdr->h_dst, ETHER_ALEN);
-        memcpy (hdr->h_src, frame_hdr->h_src, ETHER_ALEN);
+        memcpy(hdr->h_dst, frame_hdr->h_dst, ETHER_ALEN);
+        memcpy(hdr->h_src, frame_hdr->h_src, ETHER_ALEN);
         hdr->h_proto = ntohs(frame_hdr->h_proto);
         queue_discard(eth->ingress_q, 1);
         return buf->len;
@@ -184,7 +191,8 @@ int netdevice_rx_read(int handle, struct ether_hdr *hdr, uint8_t *buffer)
     }
 }
 
-int netdevice_handle2addr(int handle, mac_addr_t addr){
+int netdevice_handle2addr(int handle, mac_addr_t addr)
+{
     struct ether_linux *eth;
     eth = &ether_if[handle];
     memcpy(addr, eth->el_mac, sizeof(mac_addr_t));
