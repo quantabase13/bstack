@@ -5,6 +5,8 @@
 #include "ether.h"
 #include "logger.h"
 #include "netdevice.h"
+#include "ip.h"
+#include "ether.h"
 
 static pthread_t ingress_tid, egress_tid, sockd_tid, rx_read_tid;
 static int netdevice_handle;
@@ -17,12 +19,13 @@ void *bstack_sockd(void *arg)
 void *bstack_rx_read(void *arg)
 {
     static uint8_t rx_buffer[ETHER_MAXLEN];
+    struct ether_hdr hdr;
     while (1) {
         int retval;
-        if (netdevice_rx_read(netdevice_handle, rx_buffer) == -1) {
+        if ((retval = netdevice_rx_read(netdevice_handle, &hdr, rx_buffer)) == -1) {
             continue;
         } else {
-            retval = ether_input(rx_buffer);
+            retval = ether_input(rx_buffer, &hdr, retval);
         }
     }
 }
@@ -88,6 +91,7 @@ int main(int argc, char *argv[])
         LOG(LOG_ERR, "init failed: %d", errno);
         return 0;
     }
+    ip_config(netdevice_fd, 167772162, 4294967040);
     bstack_start();
     bstack_stop();
     return 0;
