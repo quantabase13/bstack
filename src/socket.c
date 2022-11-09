@@ -12,6 +12,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include "queue_r.h"
+#include "logger.h"
 
 
 char *SOCK_D_ADDRESS = "unix-dgram-server.temp";
@@ -32,9 +33,10 @@ void *bstack_listen(const char *socket_path)
 {
     int fd;
     void *pa;
+
     fd = open(socket_path, O_RDWR);
     if (fd == -1){
-        perror("open failed");
+        LOG(LOG_ERR, "open failed!");
         return NULL;
     }
     pa = mmap(0, BSTACK_SHMEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -42,10 +44,10 @@ void *bstack_listen(const char *socket_path)
         perror ("map failed");
         return NULL;
     }
-
+    
     block_sigusr2();
     BSTACK_SOCK_CTRL(pa)->pid_end = getpid();
-
+    
     return pa;
 }
 
@@ -63,17 +65,16 @@ ssize_t bstack_recvfrom(void *socket,
 
     sigemptyset(&sigset);
     sigaddset(&sigset, SIGUSR2);
-    // do {
-    //     struct timespec timeout = {
-    //         .tv_sec = 1,
-    //         .tv_nsec = 0,
-    //     };
-
-    //     sigtimedwait(&sigset, NULL, &timeout);
-    // } while (!BSTACK_SOCK_CTRL(socket)->intree);
+    while(!BSTACK_SOCK_CTRL(socket)->intree){
+        struct timespec timeout = {
+            .tv_sec = 1,
+            .tv_nsec = 0,
+        };   
+        sigtimedwait(&sigset, NULL, &timeout);
+    }
     do {
         struct timespec timeout = {
-            .tv_sec = 10,
+            .tv_sec = 1,
             .tv_nsec = 0,
         };
 
@@ -103,6 +104,14 @@ int bstack_sockd_send(struct bstack_sock sock)
         perror("socket");
         exit(1);
     }
+    int sock_fd = open(sock.shmem_path, O_CREAT|O_RDWR, 0664);
+    if (sock_fd == -1) {
+        LOG(LOG_ERR, "Failed to open shmem file");
+        exit(1);
+    }
+    ftruncate(sock_fd, (1<<20));
+    close(sock_fd);
+
     sockd.sun_family = AF_UNIX;
     strcpy(sockd.sun_path, SOCK_D_ADDRESS);
     int len = strlen(sockd.sun_path) + sizeof(sockd.sun_family);

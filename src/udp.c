@@ -54,7 +54,7 @@ int bstack_udp_bind(struct bstack_sock *sock)
 
     RB_INSERT(udp_sock_tree, &udp_sock_tree_head, sock);
     asm volatile("": : :"memory");
-    BSTACK_SOCK_CTRL(sock)->intree = true;
+    sock->ctrl->intree = true;
     return 0;
 }
 

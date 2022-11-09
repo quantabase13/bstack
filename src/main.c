@@ -69,12 +69,12 @@ void bstack_sock_init(struct bstack_sock *sock_new)
     int fd;
     void *pa;
 
-    fd = open(sock->shmem_path, O_CREAT|O_RDWR, 0664);
+    fd = open(sock->shmem_path, O_RDWR, 0664);
     if (fd == -1) {
         perror("Failed to open shmem file");
         exit(1);
     }
-    ftruncate(fd, (1<<20));
+    // ftruncate(fd, (1<<20));
 
     pa = mmap(0, BSTACK_SHMEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (pa == MAP_FAILED) {
