@@ -179,13 +179,13 @@ int netdevice_rx_read(int handle, struct ether_hdr *hdr, uint8_t *buffer)
         }
         struct mbuf *buf = (struct mbuf *) (eth->ingress_data + frame_index);
         frame_hdr = (struct ether_hdr *) (buf->data);
-        memcpy(buffer, buf->data + ETHER_HEADER_LEN, buf->len);
+        memcpy(buffer, buf->data + ETHER_HEADER_LEN, buf->len - ETHER_HEADER_LEN);
         // frame_hdr = (struct ether_hdr *)(eth->ingress_data + frame_index);
         memcpy(hdr->h_dst, frame_hdr->h_dst, ETHER_ALEN);
         memcpy(hdr->h_src, frame_hdr->h_src, ETHER_ALEN);
         hdr->h_proto = ntohs(frame_hdr->h_proto);
         queue_discard(eth->ingress_q, 1);
-        return buf->len;
+        return buf->len - ETHER_HEADER_LEN;
     } else {
         return -1;
     }
